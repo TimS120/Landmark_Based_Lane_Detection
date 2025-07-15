@@ -1,6 +1,6 @@
 # 🚗 Landmark-Based Lane Detection Using Traffic Cones (YOLOv8 + RealSense)
 
-This project implements a cone-based **landmark lane detection system** designed autonomous navigation in a **model city lab environment**. It uses an **Intel RealSense RGB-D camera** and a **custom-trained YOLOv8 model** to detect cones, estimate depth, and form a drivable centerline path in real time.
+This project implements a cone-based **landmark lane detection system** designed for autonomous navigation in a **model city lab environment**. It uses an **Intel RealSense RGB-D camera** and a **custom-trained YOLOv8 model** to detect cones, estimate depth, and form a drivable centerline path in real time.
 
 # 🧪 Research Question
 
@@ -234,6 +234,22 @@ This low deviation confirms that the system can accurately estimate the drivable
   <br>
 <em>Figure: Real-time lane detection terminal result.</em>
 </div>
+
+---
+
+## ✅ Conclusion
+
+We developed a real-time lane detection system using **traffic cones**, an **Intel RealSense RGB-D camera**, and a **YOLOv8 object detector** for use in model city lab environments. By pairing detected cones using depth data, the system generates an accurate drivable centerline without relying on traditional lane markings.
+
+Through careful cone pairing and depth-based spatial reasoning, the system achieves:
+
+- **High object detection performance** (mAP@0.5: **88.4%**)  
+- **Accurate depth estimation** (RMSE < **4 cm**)  
+- **Reliable centerline prediction** (lane deviation RMSE ≈ **0.71 cm**)
+
+These results validate the feasibility and robustness of using **simple, color-coded landmarks** for real-time lane inference in constrained robotic or educational environments. While this implementation does not include vehicle control or motion planning, it lays a strong foundation for future integration with autonomous navigation pipelines.
+
+Ultimately, this approach offers a **cost-effective, vision-based alternative** to conventional lane detection, ideal for small-scale autonomous systems in structured or semi-structured environments.
 
 
 
