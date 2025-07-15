@@ -31,7 +31,8 @@ The literature strongly supports using traffic cones as robust lane landmarks in
 
 Our approach builds on these findings by integrating an Intel RealSense camera with YOLOv8 for real-time, robust lane path estimation, suitable for small autonomous vehicles operating in experimental or indoor environments.
 
-For detailed insights and references, see [Literature_Review.md](./Literature_Review.md).
+👉 For detailed insights and full references, view the [Literature_Review.md](https://github.com/Scientific-Colloquiom/Landmark_Based_Lane_Detection/blob/main/Referense%20papers/readme.md).
+ 
 
 ---
 
