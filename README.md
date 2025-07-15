@@ -15,7 +15,15 @@ Unlike conventional vision-based approaches that rely on white lane markings or 
 
 The goal is to evaluate how reliably such a system can estimate a lane path using only visual and depth cues, without relying on external infrastructure like GPS or SLAM.
 
+<div align="center">
+    <img src="Test_results/image_intro.jpeg" height=500, width=800>
+   <br>
+<em>Figure: Model city environment.</em>
+</div>
+
 ---
+
+
 
 ## Literature Review Summary
 
@@ -51,7 +59,12 @@ For detailed insights and references, see [Literature_Review.md](./Literature_Re
 - Bounding boxes  
 - Depth in meters  
 - Confidence scores
-- Path with starting point
+
+<div align="center">
+    <img src="Test_results/test_image_obj.png" height=500, width=800>
+   <br>
+<em>Figure: Object Detection.</em>
+</div>
 
 ## 📐 3. Depth Estimation (3D Localization)
 
