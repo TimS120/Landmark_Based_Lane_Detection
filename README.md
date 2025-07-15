@@ -156,16 +156,18 @@ roboflow:
 - **Inference:** 178.6 ms  
 - **Postprocessing:** 26.1 ms  
 
-# (add confusion matrix image)
+# Confusion Matrix
+
+<div align="center">
+    <img src="Test_results/confusion_matrix.png" height=500, width=800>
+   <br>
+<em>Figure: Confusion Matrix.</em>
+</div>
 
 ---
 
-# 📈 Evaluation
+# 📈 Evaluation and Results
 To assess the performance of our cone-based landmark lane detection system, we use four key evaluation metrics:
-
-## 📈 Evaluation Results
-
----
 
 ### 🔹 Detection Accuracy (YOLOv8)
 
@@ -182,8 +184,24 @@ The model demonstrates strong overall detection performance, with high precision
 
 To validate the system’s depth estimation, we compared the predicted depth values from the RealSense camera with ground-truth distances measured manually. Two sets of frames were evaluated.
 
-- **Frame 1:** RMSE = 0.035 m (3.5 cm)  
+- **Frame 1:** RMSE = 0.035 m (3.5 cm)
 - **Frame 2:** RMSE = 0.030 m (3.0 cm)
+  
+<div align="center">
+    <img src="Test_results/tets_image4.png" height=500, width=800>
+    <br>
+<em>Figure: Frame 1.</em>
+</div>
+
+<br>
+<br>
+<br>
+
+<div align="center">
+    <img src="Test_results/test_image5.png" height=500, width=800>
+    <br>
+<em>Figure: Frame 2.</em>
+</div>
 
 The RMSE values indicate reliable depth prediction, with average errors under 4 cm. These results confirm that our lower-central ROI sampling method yields accurate depth even under varied ranges.
 
@@ -197,6 +215,14 @@ To assess how well the system can form the lane centerline, we measured the devi
 This low deviation confirms that the system can accurately estimate the drivable centerline using 3D cone pairing. The consistent sub-centimeter error across points supports the robustness of the approach.
 
 *📋 For detailed tables and raw measurements, refer to the evaluation script outputs and screenshots.*
+
+<div align="center">
+    <img src="Test_results/test_image_result.png" height=500, width=800>
+  <br>
+<em>Figure: Real-time lane detection terminal result.</em>
+</div>
+
+
 
 
 
