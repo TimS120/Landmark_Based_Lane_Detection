@@ -160,7 +160,45 @@ roboflow:
 
 ---
 
-# Results
+# 📈 Evaluation
+To assess the performance of our cone-based landmark lane detection system, we use four key evaluation metrics:
+
+## 📈 Evaluation Results
+
+---
+
+### 🔹 Detection Accuracy (YOLOv8)
+
+We evaluate the cone detection capability of our YOLOv8 model using standard object detection metrics. These values reflect how accurately the model identifies and classifies red and yellow cones in the scene.
+
+- **Precision:** 92.9%  
+- **Recall:** 90.9%  
+- **mAP@0.5:** 88.4%  
+- **mAP@0.5:0.95:** 72.8%
+
+The model demonstrates strong overall detection performance, with high precision and recall across both classes. Confusion matrix results further confirm effective separation between red and yellow cones with minimal false positives.
+
+### 🔹 Depth Accuracy (RMSE)
+
+To validate the system’s depth estimation, we compared the predicted depth values from the RealSense camera with ground-truth distances measured manually. Two sets of frames were evaluated.
+
+- **Frame 1:** RMSE = 0.035 m (3.5 cm)  
+- **Frame 2:** RMSE = 0.030 m (3.0 cm)
+
+The RMSE values indicate reliable depth prediction, with average errors under 4 cm. These results confirm that our lower-central ROI sampling method yields accurate depth even under varied ranges.
+
+### 🔹 Lane Estimation Error (Midpoint Deviation)
+
+To assess how well the system can form the lane centerline, we measured the deviation between the predicted midpoints (between left and right cones) and manually marked ground-truth midpoints on the track.
+
+- **Mean Error:** 0.71 cm  
+- **RMSE:** 0.71 cm
+
+This low deviation confirms that the system can accurately estimate the drivable centerline using 3D cone pairing. The consistent sub-centimeter error across points supports the robustness of the approach.
+
+*📋 For detailed tables and raw measurements, refer to the evaluation script outputs and screenshots.*
+
+
 
 
 
