@@ -196,10 +196,10 @@ The model demonstrates strong overall detection performance, with high precision
 
 ### 🔹 Depth Accuracy (RMSE)
 
-To validate the system’s depth estimation, we compared the predicted depth values from the RealSense camera with ground-truth distances measured manually. Two sets of frames were evaluated.
+To validate the system’s depth estimation, we compared the predicted depth values from the RealSense camera with ground-truth distances measured manually. Two sets of frames were evaluated with five measurement and Root Mean Square error was used.
 
-- **Frame 1:** RMSE = 0.035 m (3.5 cm)
-- **Frame 2:** RMSE = 0.030 m (3.0 cm)
+- **Frame 1:** RMSE = 0.035 m 
+- **Frame 2:** RMSE = 0.030 m 
   
 <div align="center">
     <img src="Test_results/tets_image4.png" height=500, width=800>
@@ -221,10 +221,10 @@ The RMSE values indicate reliable depth prediction, with average errors under 4 
 
 ### 🔹 Lane Estimation Error (Midpoint Deviation)
 
-To assess how well the system can form the lane centerline, we measured the deviation between the predicted midpoints (between left and right cones) and manually marked ground-truth midpoints on the track.
+To assess how well the system can form the lane centerline, we measured three deviation between the predicted midpoints (between left and right cones) and manually marked ground-truth midpoints on the track.
 
-- **Mean Error:** 0.71 cm  
-- **RMSE:** 0.71 cm
+- **Mean Error:** 0.071 m  
+- **RMSE:** 0.071 m
 
 This low deviation confirms that the system can accurately estimate the drivable centerline using 3D cone pairing. The consistent sub-centimeter error across points supports the robustness of the approach.
 
@@ -245,8 +245,8 @@ We developed a real-time lane detection system using **traffic cones**, an **Int
 Through careful cone pairing and depth-based spatial reasoning, the system achieves:
 
 - **High object detection performance** (mAP@0.5: **88.4%**)  
-- **Accurate depth estimation** (RMSE < **4 cm**)  
-- **Reliable centerline prediction** (lane deviation RMSE ≈ **0.71 cm**)
+- **Accurate depth estimation** (RMSE < **0.04 m**)  
+- **Reliable centerline prediction** (lane deviation RMSE ≈ **0.071 m**)
 
 These results validate the feasibility and robustness of using **simple, color-coded landmarks** for real-time lane inference in constrained robotic or educational environments. While this implementation does not include vehicle control or motion planning, it lays a strong foundation for future integration with autonomous navigation pipelines.
 
