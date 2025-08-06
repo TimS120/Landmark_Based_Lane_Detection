@@ -253,16 +253,20 @@ These results validate the feasibility and robustness of using **simple, color-c
 Ultimately, this approach offers a **cost-effective, vision-based alternative** to conventional lane detection, ideal for small-scale autonomous systems in structured or semi-structured environments.
 
 
-
-
-
-
-
-
-
 ---
 
 ## 📌 Notes
 - This project does **not integrate path-following or control**. It is focused solely on **real-time lane detection** using traffic cones.
 - Designed for use in controlled indoor "model city" environments.
 
+
+
+---
+# Behaviour/ Problems
+- Image+Depth image causes high data traffic (or computational need) --> Low fps of only up to 7 fps [in yellow car], with full resolution (needed for bigger field of view) the fps will further decrease 
+
+
+# Next steps
+- Train model with data which was recorded with the camera of the car in situation where the car stands on the ground/ drives around by its own AND WITH MORE DATA OVERALL
+- Implement, that the cone positions are transformed to map coordinates and if already existing cones were again detected, the position must be updated (Kalman filter/ SLAM?)
+- Implement, a reliable method with which a trajectory can be found
