@@ -10,9 +10,59 @@ import rclpy
 from ament_index_python.packages import get_package_share_directory
 from rclpy.node import Node
 from sensor_msgs.msg import Image, CameraInfo
+from nav_msgs.msg import Odometry
 from visualization_msgs.msg import Marker, MarkerArray
 from cv_bridge import CvBridge
 from message_filters import Subscriber, TimeSynchronizer
+import tf2_ros
+
+
+def _quat_to_rot(qx: float, qy: float, qz: float, qw: float) -> np.ndarray:
+    """Convert quaternion to a 3x3 rotation matrix."""
+    n = np.sqrt(qx * qx + qy * qy + qz * qz + qw * qw)
+    if n == 0.0:
+        return np.eye(3, dtype=np.float64)
+    qx /= n
+    qy /= n
+    qz /= n
+    qw /= n
+    xx = qx * qx
+    yy = qy * qy
+    zz = qz * qz
+    xy = qx * qy
+    xz = qx * qz
+    yz = qy * qz
+    wx = qw * qx
+    wy = qw * qy
+    wz = qw * qz
+
+    rotation_array = np.array([
+        [1.0 - 2.0 * (yy + zz), 2.0 * (xy - wz), 2.0 * (xz + wy)],
+        [2.0 * (xy + wz), 1.0 - 2.0 * (xx + zz), 2.0 * (yz - wx)],
+        [2.0 * (xz - wy), 2.0 * (yz + wx), 1.0 - 2.0 * (xx + yy)],
+    ], dtype=np.float64)
+
+    return rotation_array
+
+def _transform_to_mat(t) -> np.ndarray:
+    """Build a 4x4 transform matrix from a geometry_msgs/Transform."""
+    R = _quat_to_rot(t.rotation.x, t.rotation.y, t.rotation.z, t.rotation.w)
+    T = np.eye(4, dtype=np.float64)
+    T[:3, :3] = R
+    T[0, 3] = t.translation.x
+    T[1, 3] = t.translation.y
+    T[2, 3] = t.translation.z
+    return T
+
+def _pose_to_mat(p) -> np.ndarray:
+    """Build a 4x4 transform matrix from a geometry_msgs/Pose."""
+    R = _quat_to_rot(p.orientation.x, p.orientation.y, p.orientation.z, p.orientation.w)
+    T = np.eye(4, dtype=np.float64)
+    T[:3, :3] = R
+    T[0, 3] = p.position.x
+    T[1, 3] = p.position.y
+    T[2, 3] = p.position.z
+    return T
 
 
 class pylon_detection(Node):
@@ -32,26 +82,33 @@ class pylon_detection(Node):
         self._saved_png_once = False
 
         # Publishers
-        self.marker_pub = self.create_publisher(MarkerArray, '/detected_cones', 10)
+        self.marker_pub = self.create_publisher(MarkerArray, "/detected_cones", 10)
 
         # Subscribers
-        self.color_sub = Subscriber(self, Image, '/camera/camera/color/image_raw')
-        self.depth_sub = Subscriber(self, Image, '/camera/camera/aligned_depth_to_color/image_raw')
-        self.ts = TimeSynchronizer([self.color_sub, self.depth_sub], 10)
-        self.ts.registerCallback(self._image_callback)
-
-        # Camera intrinsics (will be use once and then be deleted)
-        self.fx = self.fy = self.cx = self.cy = None
+        self.color_sub = Subscriber(self, Image, "/camera/camera/color/image_raw")
+        self.depth_sub = Subscriber(self, Image, "/camera/camera/aligned_depth_to_color/image_raw")
+        self.odom_sub = self.create_subscription(Odometry, "/ego_odom", self._odom_callback, 10)
         self.camera_info_sub = self.create_subscription(
             CameraInfo,
-            '/camera/camera/color/camera_info',
+            "/camera/camera/color/camera_info",
             self._info_callback,
             10
         )
+        self.ts = TimeSynchronizer([self.color_sub, self.depth_sub], 10)
+        self.ts.registerCallback(self._image_callback)
 
         # Other
+        self.latest_odom = None
+
+        self.fx = self.fy = self.cx = self.cy = None  # Camera intrinsics (will be use once and then be deleted)
+
+        self.base_frame = "7/base_link"
+        self.world_frame = "map"
+        self.tf_buffer = tf2_ros.Buffer()
+        self.tf_listener = tf2_ros.TransformListener(self.tf_buffer, self)
+
         pkg_share = os.path.join(get_package_share_directory("landmark_based_lane_detection_pkg"))
-        model_path = os.path.join(pkg_share, 'best.pt')
+        model_path = os.path.join(pkg_share, "best.pt")
         self.model = YOLO(model_path)
         self.bridge = CvBridge()
 
@@ -62,6 +119,7 @@ class pylon_detection(Node):
         self.get_logger().info(f"Using device: {self.device}")
 
         self.get_logger().info("Pylon detection node initialized.")
+
 
     def _info_callback(self, msg: CameraInfo) -> None:
         """
@@ -76,6 +134,12 @@ class pylon_detection(Node):
         )
         # No longer need this subscription
         self.destroy_subscription(self.camera_info_sub)
+
+    def _odom_callback(self, msg: Odometry) -> None:
+        """
+        Store latest odometry of the base frame in the world frame.
+        """
+        self.latest_odom = msg
 
     def _get_cone_depth(self, depth_img: np.ndarray, x1: int, y1: int, x2: int, y2: int) -> float | None:
         """
@@ -110,6 +174,15 @@ class pylon_detection(Node):
         y = (v - self.cy) * z / self.fy
         return (x, y, z)
 
+    def _lookup_transform_mat(self, target_frame: str, source_frame: str, stamp) -> np.ndarray | None:
+        """
+        Resolve TF from source_frame to target_frame at given time and return as 4x4 matrix.
+        """
+        if self.tf_buffer.can_transform(target_frame, source_frame, stamp, rclpy.duration.Duration(seconds=0.1)):
+            ts = self.tf_buffer.lookup_transform(target_frame, source_frame, stamp)
+            return _transform_to_mat(ts.transform)
+        return None
+
     def _image_callback(self, color_msg: Image, depth_msg: Image) -> None:
         """
         Process synchronized color and depth images, detect cones, and publish markers.
@@ -131,7 +204,6 @@ class pylon_detection(Node):
             depth = depth.astype(np.float32)
 
         # Inference
-        #start = time.time()
         results = self.model.predict(
             color,
             conf=0.5,
@@ -139,14 +211,47 @@ class pylon_detection(Node):
             device=self.device,
             half=True if self.device.startswith("cuda") else False,
         )
-        #end = time.time()
-        #print("Complete inference time:", end-start)
 
-        #print("len(results):", len(results))
-        #for res in results:
-        #    print("len(res.boxes):", len(res.boxes))
-
+        # Prepare markers
         markers = MarkerArray()
+
+        src_frame = color_msg.header.frame_id
+        stamp = color_msg.header.stamp
+
+        # camera -> base transform
+        T_base_from_cam = self._lookup_transform_mat(self.base_frame, src_frame, stamp)
+        base_frame_used = self.base_frame
+        if T_base_from_cam is None:
+            self.get_logger().warn(
+                f"No TF from '{src_frame}' to '{self.base_frame}'. "
+                f"Add a static identity between '7/camera_link' and 'camera_link' "
+                f"or between '7/base_link' and 'base_link'."
+            )
+
+        # world(odom) -> base transform (from /ego_odom)
+        T_world_from_base_used = None
+        world_frame_used = self.world_frame
+        if self.latest_odom is not None:
+            world_frame_used = self.latest_odom.header.frame_id or self.world_frame
+            T_world_from_child = _pose_to_mat(self.latest_odom.pose.pose)  # odom -> child
+            odom_child = self.latest_odom.child_frame_id or "base_link"
+            # Treat frames as identical if their basename matches (e.g., "base_link" vs "7/base_link").
+            if (
+                odom_child == base_frame_used
+                or odom_child.split("/")[-1] == base_frame_used.split("/")[-1]
+            ):
+                T_world_from_base_used = T_world_from_child
+            else:
+                # Bridge base_link vs 7/base_link via TF
+                T_child_from_base = self._lookup_transform_mat(odom_child, base_frame_used, stamp)
+                if T_child_from_base is not None:
+                    T_world_from_base_used = T_world_from_child @ T_child_from_base
+                else:
+                    self.get_logger().warn(
+                        f"No TF between odom child '{odom_child}' and '{base_frame_used}'. "
+                        f"Add a static identity TF (e.g., 7/base_link <-> base_link)."
+                    )
+
         marker_id = 0
         vis_img = color.copy()
         for res in results:
@@ -159,47 +264,45 @@ class pylon_detection(Node):
                 )
 
                 z_m = depth_val if depth_val is not None else None
-
                 if depth_val is None:
                     continue
 
-                x, y, z = self._compute_3d(
-                    cx_pix, cy_pix, depth_val
-                )
-                # Coordinate transformation
-                temp_x = z
-                temp_y = -x
-                temp_z = -y
-                x = temp_x
-                y = temp_y
-                z = 0.0
+                # 3D in optical camera frame
+                x_opt, y_opt, z_opt = self._compute_3d(cx_pix, cy_pix, depth_val)
+                p_cam = np.array([x_opt, y_opt, z_opt, 1.0], dtype=np.float64)
 
-                marker = Marker()
-                marker.header.stamp = color_msg.header.stamp
-                marker.header.frame_id = color_msg.header.frame_id
-                marker.ns = "detected_cones"
-                marker.id = marker_id
-                marker.type = Marker.SPHERE
-                marker.action = Marker.ADD
-                marker.pose.position.x = x
-                marker.pose.position.y = y
-                marker.pose.position.z = z
-                marker.pose.orientation.w = 1.0
-                marker.scale.x = 0.1
-                marker.scale.y = 0.1
-                marker.scale.z = 0.1
+                # Creating the markers
+                if T_base_from_cam is not None:
+                    p_base = T_base_from_cam @ p_cam
+                    p_base[2] = 0.0
 
-                # Color by class (0=red, 1=yellow)
-                cls_id = int(box.cls[0])
-                if cls_id == 0:
-                    marker.color.r = 1.0
-                else:
-                    marker.color.r = 1.0
-                    marker.color.g = 1.0
-                marker.color.a = 0.8
-
-                markers.markers.append(marker)
-                marker_id += 1
+                    # Odom/world marker (via /ego_odom)
+                    if T_world_from_base_used is not None:
+                        p_world = T_world_from_base_used @ p_base
+                        p_world[2] = 0.0
+                        marker_w = Marker()
+                        marker_w.header.stamp = color_msg.header.stamp
+                        marker_w.header.frame_id = self.world_frame
+                        marker_w.ns = "detected_cones_odom"
+                        marker_w.id = marker_id
+                        marker_w.type = Marker.SPHERE
+                        marker_w.action = Marker.ADD
+                        marker_w.pose.position.x = float(p_world[0])
+                        marker_w.pose.position.y = float(p_world[1])
+                        marker_w.pose.position.z = float(p_world[2])
+                        marker_w.pose.orientation.w = 1.0
+                        marker_w.scale.x = 0.1
+                        marker_w.scale.y = 0.1
+                        marker_w.scale.z = 0.1
+                        cls_id = int(box.cls[0])
+                        if cls_id == 0:
+                            marker_w.color.r = 1.0
+                        else:
+                            marker_w.color.r = 1.0
+                            marker_w.color.g = 1.0
+                        marker_w.color.a = 0.8
+                        markers.markers.append(marker_w)
+                        marker_id += 1
 
                 # Draw visualization overlays
                 if self.save_one_inference_png and not self._saved_png_once:

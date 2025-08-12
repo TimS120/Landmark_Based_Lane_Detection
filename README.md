@@ -263,10 +263,18 @@ Ultimately, this approach offers a **cost-effective, vision-based alternative** 
 
 ---
 # Behaviour/ Problems
-- Image+Depth image causes high data traffic (or computational need) --> Low fps of only up to 7 fps [in yellow car], with full resolution (needed for bigger field of view) the fps will further decrease 
+- Image+Depth image causes high data traffic (or computational need) --> Low fps of only up to 7 fps [in yellow car], with full resolution (needed for bigger field of view) the fps will further decrease
+- The accuracy of the object detection is not that high and causes that cones are sometimes not be detected
+- The heading of the ego vehicle is slow and is lacking behind
 
 
 # Next steps
+- Find way to have higher frame rates while having the full field of view
+
 - Train model with data which was recorded with the camera of the car in situation where the car stands on the ground/ drives around by its own AND WITH MORE DATA OVERALL
-- Implement, that the cone positions are transformed to map coordinates and if already existing cones were again detected, the position must be updated (Kalman filter/ SLAM?)
-- Implement, a reliable method with which a trajectory can be found
+
+- Make the ego heading more responsive/ precise
+
+- Implement, that the cone positions are updated in the map frame
+- Implement a reliable method with which a trajectory can be found
+- Update readme from colloquium aim to usage-aim
