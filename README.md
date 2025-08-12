@@ -264,8 +264,10 @@ Ultimately, this approach offers a **cost-effective, vision-based alternative** 
 ---
 # Behaviour/ Problems
 - Image+Depth image causes high data traffic (or computational need) --> Low fps of only up to 7 fps [in yellow car], with full resolution (needed for bigger field of view) the fps will further decrease
+
 - The accuracy of the object detection is not that high and causes that cones are sometimes not be detected
-- The heading of the ego vehicle is slow and is lacking behind
+
+- The heading of the ego vehicle is slow and is lacking behind (it updates only when the car changes also its position strong enough) --> Using the commented out version with lower covariances solves this at least a little bit
 
 
 # Next steps
@@ -274,7 +276,13 @@ Ultimately, this approach offers a **cost-effective, vision-based alternative** 
 - Train model with data which was recorded with the camera of the car in situation where the car stands on the ground/ drives around by its own AND WITH MORE DATA OVERALL
 
 - Make the ego heading more responsive/ precise
+- Tune the map creation script in a way, so that it works with this behaviour of the localization output
+  - Or use SLAM, because currently we assume that we know the position of the ego vehicle with OptiTrack + localization node and only want to do mapping. However apparently the position (more precise the heading) is not correct/ precise enough, so we have to localize the ego pose and do mapping of the pylones
+  - If you try to use the approach of using the pose which comes from the robus-localization node, then the map-creation script must also be changed in a way, so that it does not forget the already detected pylones which are no longer detecable (because they are e.g. behind the car) --> But I guess this approach of using OptiTrack for position and heading is anyway not that good, because e.g. GPS does also not provide any heading but only a position and the gps-signals can be occluded, so another method must be used in real world applications like Formula Student
 
-- Implement, that the cone positions are updated in the map frame
+
 - Implement a reliable method with which a trajectory can be found
+
 - Update readme from colloquium aim to usage-aim
+  - Write down, which repos with which commits were used + changes on them (robus_localization (covariance))
+  - Add that the aim is something like: https://www.youtube.com/watch?v=ZPVMYiw5ucc&t=2s

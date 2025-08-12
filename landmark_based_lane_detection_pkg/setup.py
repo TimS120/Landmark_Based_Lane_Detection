@@ -22,7 +22,8 @@ setup(
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [
-            'pylon_detection_node = landmark_based_lane_detection_pkg.pylon_detection:main'
+            'pylon_detection_node = landmark_based_lane_detection_pkg.pylon_detection:main',
+            'map_creation_node = landmark_based_lane_detection_pkg.map_creation:main',
         ],
     },
     include_package_data=True,

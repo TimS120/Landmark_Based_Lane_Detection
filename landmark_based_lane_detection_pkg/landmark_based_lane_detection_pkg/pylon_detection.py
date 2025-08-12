@@ -1,6 +1,5 @@
 import os
 import torch
-import time
 import cv2
 
 import numpy as np
@@ -67,7 +66,7 @@ def _pose_to_mat(p) -> np.ndarray:
 
 class pylon_detection(Node):
     """
-    ROS2 node for detecting cones/pylons using a YOLO model on synchronized
+    ROS2 node for detecting pylons using a YOLO model on synchronized
     color and aligned depth images, and publishing their 3D positions as markers.
     """
 
@@ -82,7 +81,7 @@ class pylon_detection(Node):
         self._saved_png_once = False
 
         # Publishers
-        self.marker_pub = self.create_publisher(MarkerArray, "/detected_cones", 10)
+        self.marker_pub = self.create_publisher(MarkerArray, "/detected_pylons", 10)
 
         # Subscribers
         self.color_sub = Subscriber(self, Image, "/camera/camera/color/image_raw")
@@ -141,7 +140,7 @@ class pylon_detection(Node):
         """
         self.latest_odom = msg
 
-    def _get_cone_depth(self, depth_img: np.ndarray, x1: int, y1: int, x2: int, y2: int) -> float | None:
+    def _get_pylon_depth(self, depth_img: np.ndarray, x1: int, y1: int, x2: int, y2: int) -> float | None:
         """
         Sample a lower region of the bounding box, filter out zeros and outliers,
         then return the median Z value (in meters).
@@ -185,7 +184,7 @@ class pylon_detection(Node):
 
     def _image_callback(self, color_msg: Image, depth_msg: Image) -> None:
         """
-        Process synchronized color and depth images, detect cones, and publish markers.
+        Process synchronized color and depth images, detect pylons, and publish markers.
         """
         #print("Synchronized pair received.")
         if any(v is None for v in (self.fx, self.fy, self.cx, self.cy)):
@@ -259,7 +258,7 @@ class pylon_detection(Node):
                 x1, y1, x2, y2 = map(int, box.xyxy[0])
                 cx_pix = int((x1 + x2) / 2)
                 cy_pix = int((y1 + y2) / 2)
-                depth_val = self._get_cone_depth(
+                depth_val = self._get_pylon_depth(
                     depth, x1, y1, x2, y2
                 )
 
@@ -283,7 +282,7 @@ class pylon_detection(Node):
                         marker_w = Marker()
                         marker_w.header.stamp = color_msg.header.stamp
                         marker_w.header.frame_id = self.world_frame
-                        marker_w.ns = "detected_cones_odom"
+                        marker_w.ns = "detected_pylons"
                         marker_w.id = marker_id
                         marker_w.type = Marker.SPHERE
                         marker_w.action = Marker.ADD
@@ -295,9 +294,9 @@ class pylon_detection(Node):
                         marker_w.scale.y = 0.1
                         marker_w.scale.z = 0.1
                         cls_id = int(box.cls[0])
-                        if cls_id == 0:
+                        if cls_id == 0:  # Left side of the track
                             marker_w.color.r = 1.0
-                        else:
+                        else:  # Right side of the track
                             marker_w.color.r = 1.0
                             marker_w.color.g = 1.0
                         marker_w.color.a = 0.8

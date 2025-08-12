@@ -48,6 +48,14 @@ def generate_launch_description() -> LaunchDescription:
             PythonLaunchDescriptionSource(car_description_path),
             launch_arguments={"car_id": "7"}.items()
         )
+    
+    static_tf = Node(
+        package="tf2_ros",
+        executable="static_transform_publisher",
+        name="static_tf_7_camera_link_to_camera_link",
+        output="screen",
+        arguments=["0", "0", "0", "0", "0", "0", "1", "7/camera_link", "camera_link"],
+    )
 
     launch_description = LaunchDescription()
 
@@ -56,5 +64,6 @@ def generate_launch_description() -> LaunchDescription:
     launch_description.add_action(pylon_detection)
     launch_description.add_action(localization)
     launch_description.add_action(car_description)
+    launch_description.add_action(static_tf)
 
     return launch_description
