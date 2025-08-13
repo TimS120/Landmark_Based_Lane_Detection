@@ -1,0 +1,59 @@
+{
+  "pylones": [
+    {"x": -0.5, "y": 0.0, "is_right": false},
+    {"x": 0.5, "y": 0.0, "is_right": true},
+    {"x": -0.5, "y": 1.0, "is_right": false},
+    {"x": 0.5, "y": 1.0, "is_right": true},
+    {"x": -0.5, "y": 2.0, "is_right": false},
+    {"x": 0.5, "y": 2.0, "is_right": true},
+    {"x": -0.5, "y": 3.0, "is_right": false},
+    {"x": 0.5, "y": 3.0, "is_right": true},
+    {"x": -0.5, "y": 4.0, "is_right": false},
+    {"x": 0.5, "y": 4.0, "is_right": true},
+    {"x": -0.5, "y": 5.0, "is_right": false},
+    {"x": 0.5, "y": 5.0, "is_right": true},
+    {"x": -0.5, "y": 6.0, "is_right": false},
+    {"x": 0.5, "y": 6.0, "is_right": true},
+    {"x": -0.5, "y": 7.0, "is_right": false},
+    {"x": 0.5, "y": 7.0, "is_right": true},
+    {"x": -0.5, "y": 8.0, "is_right": false},
+    {"x": 0.5, "y": 8.0, "is_right": true},
+
+    {"x": -0.5, "y": 9.0, "is_right": false},
+    {"x": 0.5, "y": 9.0, "is_right": false},
+
+    {"x": 1.5, "y": 9.0, "is_right": false},
+    {"x": 1.5, "y": 8.0, "is_right": true},
+
+    {"x": 2.5, "y": 9.0, "is_right": false},
+    {"x": 3.5, "y": 9.0, "is_right": false},
+
+    {"x": 3.5, "y": 8.0, "is_right": false},
+    {"x": 2.5, "y": 8.0, "is_right": true},
+    {"x": 3.5, "y": 7.0, "is_right": false},
+    {"x": 2.5, "y": 7.0, "is_right": true},
+    {"x": 3.5, "y": 6.0, "is_right": false},
+    {"x": 2.5, "y": 6.0, "is_right": true},
+    {"x": 3.5, "y": 5.0, "is_right": false},
+    {"x": 2.5, "y": 5.0, "is_right": true},
+    {"x": 3.5, "y": 4.0, "is_right": false},
+    {"x": 2.5, "y": 4.0, "is_right": true},
+    {"x": 3.5, "y": 3.0, "is_right": false},
+    {"x": 2.5, "y": 3.0, "is_right": true},
+    {"x": 3.5, "y": 2.0, "is_right": false},
+    {"x": 2.5, "y": 2.0, "is_right": true},
+    {"x": 3.5, "y": 1.0, "is_right": false},
+    {"x": 2.5, "y": 1.0, "is_right": true},
+    {"x": 3.5, "y": 0.0, "is_right": false},
+    {"x": 2.5, "y": 0.0, "is_right": true},
+
+    {"x": -0.5, "y": -1.0, "is_right": false},
+    {"x": 0.5, "y": -1.0, "is_right": false},
+
+    {"x": 1.5, "y": -1.0, "is_right": false},
+    {"x": 1.5, "y": 0.0, "is_right": true},
+
+    {"x": 2.5, "y": -1.0, "is_right": false},
+    {"x": 3.5, "y": -1.0, "is_right": false}
+  ]
+}

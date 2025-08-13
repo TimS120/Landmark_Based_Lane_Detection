@@ -219,8 +219,8 @@ class MapCreation(Node):
         super().__init__("map_creation_node")
 
         # Subscriber
-        self.sub = self.create_subscription(MarkerArray, "/detected_pylons", self._cb_markers, 10)
-        self.ego_odom_sub = self.create_subscription(Odometry, "/ego_odom", self._cb_ego_odom, 10)
+        self.sub = self.create_subscription(MarkerArray, "/detected_pylons", self.markers_callback, 10)
+        self.ego_odom_sub = self.create_subscription(Odometry, "/ego_odom", self.ego_odom_callback, 10)
 
         # Publisher
         self.pub = self.create_publisher(MarkerArray, "/pylon_map", 10)
@@ -235,7 +235,7 @@ class MapCreation(Node):
 
         self.get_logger().info("Map creation node initialized.")
 
-    def _cb_ego_odom(self, msg: Odometry) -> None:
+    def ego_odom_callback(self, msg: Odometry) -> None:
         """Update ego xy position from nav_msgs/Odometry.
 
         Expects msg.header.frame_id to match the map frame.
@@ -243,7 +243,7 @@ class MapCreation(Node):
         """
         self.car_xy = (float(msg.pose.pose.position.x), float(msg.pose.pose.position.y),)
 
-    def _cb_markers(self, msg: MarkerArray) -> None:
+    def markers_callback(self, msg: MarkerArray) -> None:
         """Handle incoming detections: build measurements, update trackers, publish map."""
         # Extract measurements per side
         meas_left: List[Tuple[np.ndarray, np.ndarray]] = []
