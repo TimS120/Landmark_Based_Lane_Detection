@@ -14,7 +14,7 @@ def generate_launch_description() -> LaunchDescription:
             executable="simulate_map_creation_node",
             name="simulate_map_creation_node",
             output="screen",
-            parameters=[],
+            parameters=[{"map_name": "map_spacing_033.json"}],
         )
 
     simulate_driving = Node(

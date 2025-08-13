@@ -58,11 +58,15 @@ class MapCreation(Node):
         super().__init__("simulation_map_creation_node")
 
         # Parameters
-        self.declare_parameter("frame_id", "map")
-        self.declare_parameter("topic", "/pylon_map")
         self.declare_parameter("fov_deg", 30.0)
         self.declare_parameter("range_m", 5.0)
         self.declare_parameter("dedup_round_ndigits", 3)
+        self.declare_parameter("map_name", "map1.json")
+
+        self.fov_rad = math.radians(float(self.get_parameter("fov_deg").get_parameter_value().double_value))
+        self.range_m = float(self.get_parameter("range_m").get_parameter_value().double_value)
+        self.dedup_ndigits = int(self.get_parameter("dedup_round_ndigits").get_parameter_value().integer_value)
+        map_name = self.get_parameter("map_name").get_parameter_value().string_value
 
         # Subscriber
         self.pose_sub = self.create_subscription(PoseStamped, "/pose", self.pose_callback, 10)
@@ -71,24 +75,16 @@ class MapCreation(Node):
         self.marker_pub = self.create_publisher(MarkerArray, "/pylon_map", 10)
 
         # Other
-        self.frame_id = self.get_parameter("frame_id").get_parameter_value().string_value
-        self.topic = self.get_parameter("topic").get_parameter_value().string_value
-        self.fov_rad = math.radians(
-            float(self.get_parameter("fov_deg").get_parameter_value().double_value)
-        )
-        self.range_m = float(self.get_parameter("range_m").get_parameter_value().double_value)
-        self.dedup_ndigits = int(
-            self.get_parameter("dedup_round_ndigits").get_parameter_value().integer_value
-        )
+        self.frame_id = "map"
 
         pkg_share = os.path.join(get_package_share_directory("landmark_based_lane_detection_pkg"))
-        model_path = os.path.join(pkg_share, "map1.json")
+        model_path = os.path.join(pkg_share, map_name)
         self.static_pylons = self._load_pylons(model_path)
 
         self.accumulated: Dict[Tuple[float, float], Dict[str, float]] = {}
 
         self.get_logger().info(
-            f"Loaded {len(self.static_pylons)} pylons from '{model_path}'. Publishing on '{self.topic}'."
+            f"Loaded {len(self.static_pylons)} pylons from '{model_path}'."
         )
 
         self.get_logger().info("Simulation map creation node initialized.")
