@@ -96,10 +96,10 @@ class TrajectoryCreation(Node):
         self.declare_parameter("yaw_rate_max_rps", math.pi)  # 180 deg/s
         self.declare_parameter("yaw_accel_max_rps2", math.pi)  # 180 deg/s^2
 
-        self.declare_parameter("horizon_s", 3.0)
+        self.declare_parameter("horizon_s", 5.0)
         self.declare_parameter("sim_dt", 0.1)
-        self.declare_parameter("sample_count_w", 31)
-        self.declare_parameter("sample_count_v", 5)
+        self.declare_parameter("sample_count_w", 15)
+        self.declare_parameter("sample_count_v", 15)
         self.declare_parameter("pose_spacing_m", 0.2)
 
         self.declare_parameter("footprint_length_m", 0.5)
@@ -118,8 +118,8 @@ class TrajectoryCreation(Node):
         self.declare_parameter("color_tol", 0.15)
 
         # Subscriber
-        self.create_subscription(PoseStamped, "/pose", self.pose_cb, 10)
-        self.create_subscription(MarkerArray, "/pylon_map", self.map_cb, 10)
+        self.create_subscription(PoseStamped, "/pose", self.pose_callback, 10)
+        self.create_subscription(MarkerArray, "/pylon_map", self.map_callback, 10)
 
         # Publisher
         self.traj_pub = self.create_publisher(PoseArray, "/trajectory", 10)
@@ -136,17 +136,17 @@ class TrajectoryCreation(Node):
 
         self.get_logger().info("Trajectory creation node initialized.")
 
-    def pose_cb(self, msg: PoseStamped) -> None:
+    def pose_callback(self, msg: PoseStamped) -> None:
         """Store the latest ego pose."""
         self.current_pose = msg
 
-    def map_cb(self, msg: MarkerArray) -> None:
+    def map_callback(self, msg: MarkerArray) -> None:
         """On new cone map: run DWA and publish trajectory if pose is known."""
         if self.current_pose is None:
             self.get_logger().warn("Received /pylon_map but no /pose yet; skipping.")
             return
 
-        # Extract cone points and split by side using color.
+        # Extract cone points and split by side using color
         color_tol = float(self.get_parameter("color_tol").value)
         left_cones: List[Tuple[float, float]] = []   # red
         right_cones: List[Tuple[float, float]] = []  # yellow
@@ -163,7 +163,7 @@ class TrajectoryCreation(Node):
             elif abs(r - 1.0) <= color_tol and abs(g - 1.0) <= color_tol and abs(b - 0.0) <= color_tol:
                 right_cones.append((x, y))
             else:
-                # Unknown color; treat as generic obstacle by adding to both lists.
+                # Unknown color; treat as generic obstacle by adding to both lists
                 left_cones.append((x, y))
                 right_cones.append((x, y))
 
@@ -179,7 +179,7 @@ class TrajectoryCreation(Node):
 
     def plan_dwa(self, left_cones: List[Tuple[float, float]], right_cones: List[Tuple[float, float]]) -> Optional[PoseArray]:
         """Run one DWA cycle and return the best PoseArray or None if infeasible."""
-        # Parameters.
+        # Parameters
         v_min = float(self.get_parameter("speed_min_mps").value)
         v_max = float(self.get_parameter("speed_max_mps").value)
         a_max = float(self.get_parameter("accel_max_mps2").value)
@@ -198,23 +198,23 @@ class TrajectoryCreation(Node):
         w_smooth = float(self.get_parameter("w_smooth").value)
         w_wchange = float(self.get_parameter("w_omega_change").value)
         w_progress = float(self.get_parameter("w_progress").value)
-        
+
         w_heading = float(self.get_parameter("w_heading").value)
         w_forward = float(self.get_parameter("w_forward").value)
 
-        # Ego state.
+        # Ego state
         pose = self.current_pose.pose
         x = pose.position.x
         y = pose.position.y
 
-        # Extract yaw from quaternion.
+        # Extract yaw from quaternion
         qw = pose.orientation.w
         qx = pose.orientation.x
         qy = pose.orientation.y
         qz = pose.orientation.z
         yaw = math.atan2(2.0 * (qw * qz + qx * qy), 1.0 - 2.0 * (qy * qy + qz * qz))
 
-        # Dynamic window for omega and v.
+        # Dynamic window for omega and v
         w_min_win = max(-w_max, self.last_omega - w_acc * dt)
         w_max_win = min(w_max, self.last_omega + w_acc * dt)
 
@@ -233,7 +233,7 @@ class TrajectoryCreation(Node):
         else:
             candidate_speeds = [v_min_win + i * (v_max_win - v_min_win) / (samples_v - 1) for i in range(samples_v)]
 
-        # Obstacles for clearance queries.
+        # Obstacles for clearance queries
         obstacles = left_cones + right_cones
 
         best_cost = float("inf")
@@ -258,7 +258,7 @@ class TrajectoryCreation(Node):
                     seg = euclid2((nx, ny), (sx, sy))
                     path_len += seg
 
-                    # Clearance check.
+                    # Clearance check
                     for ox, oy in obstacles:
                         d = euclid2((nx, ny), (ox, oy))
                         if d <= self.robot_radius:
@@ -286,7 +286,7 @@ class TrajectoryCreation(Node):
                 # Terminal state after rollout
                 end_x, end_y, end_yaw = sx, sy, syaw
 
-                # Costs.
+                # Costs
                 clear_cost = 1.0 / max(min_clear - self.robot_radius, 1e-3)
                 if (min_left < float("inf")) and (min_right < float("inf")):
                     balance_cost = abs(min_left - min_right)
@@ -296,11 +296,11 @@ class TrajectoryCreation(Node):
                 wchange_cost = abs(omega - self.last_omega)
                 progress_cost = -path_len  # prefer longer progress along the horizon
 
-                # NEW: penalize turning back (terminal heading change)
+                # Penalize turning back (terminal heading change)
                 heading_change = abs(wrap_angle(end_yaw - yaw))
                 heading_cost = heading_change
 
-                # NEW: reward forward displacement along current yaw (discourage U-turn arcs)
+                # Reward forward displacement along current yaw (discourage U-turn arcs)
                 dx, dy = (end_x - x), (end_y - y)
                 forward_proj = dx * math.cos(yaw) + dy * math.sin(yaw)
                 forward_cost = -forward_proj  # more forward (>=0) -> lower cost
@@ -324,11 +324,11 @@ class TrajectoryCreation(Node):
         if not best_path:
             return None
 
-        # Update last controls for next cycle.
+        # Update last controls for next cycle
         self.last_omega = best_omega
         self.last_speed = best_speed
 
-        # Convert the best path to a PoseArray with approximately uniform spacing.
+        # Convert the best path to a PoseArray with approximately uniform spacing
         traj = PoseArray()
         traj.header.frame_id = "map"
         traj.header.stamp = self.get_clock().now().to_msg()
@@ -337,7 +337,7 @@ class TrajectoryCreation(Node):
         if spacing <= 0.0:
             spacing = 0.2
 
-        # Include the start pose.
+        # Include the start pose
         start_pose = Pose()
         start_pose.position.x = x
         start_pose.position.y = y

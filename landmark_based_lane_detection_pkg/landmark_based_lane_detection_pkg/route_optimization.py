@@ -175,7 +175,7 @@ class RouteOptimization(Node):
     def __init__(self) -> None:
         super().__init__("route_optimization_node")
 
-        # Parameters (only Chaikin as requested)
+        # Parameters
         self.declare_parameter("chaikin_iterations", 10)
         self.declare_parameter("chaikin_alpha", 0.49)
 
@@ -216,7 +216,6 @@ class RouteOptimization(Node):
             return
 
         if msg.header.frame_id and msg.header.frame_id != FRAME_ID:
-            # Per specification, everything is in "map"; no TF conversion.
             self.get_logger().warn(
                 f"Ignoring pose with frame_id='{msg.header.frame_id}', expected '{FRAME_ID}'."
             )
