@@ -255,6 +255,37 @@ Ultimately, this approach offers a **cost-effective, vision-based alternative** 
 - Literature of approaches to do that can be found [here](https://arxiv.org/pdf/2210.10933), [here](https://arxiv.org/pdf/1909.00119) and [here](https://arxiv.org/pdf/2408.06113).
 - A thorough report about the trajectory/ path planning can be found [here](https://static1.squarespace.com/static/5e2a78aea2dc434ac475b5a4/t/615ee7754fb3ae56ba011134/1731809144631/Adam+Slomoi+-+Path+Planning+and+Control+in+an+Autonomous+Formula+Student+Vehicle.pdf).
 
+# Developed pipeline & Problem division
+## Problem division
+The whole Cone detection and track driving problem can be divided into the following sub-problems:
+- Pylon/ Cone detection
+- Mapping + Localization
+- Trajectory planning
+- Route creation and optimization
+- (Path following, Vehicle state determination, etc.)
+
+## Pipeline
+The pylon/ cone detection is done in the [pylon detection node](./landmark_based_lane_detection_pkg/landmark_based_lane_detection_pkg/pylon_detection.py) by using a deep learning model, described [here](#model-performance-summary). Since this was only designed for the model city, it was tried to use instead of SLAM as Formula Student teams are using the OptiTrack system to create directly the map from the detections. Therefore this node does already transform with OptiTrack's information the positions into map frame. With the [map creation node](./landmark_based_lane_detection_pkg/landmark_based_lane_detection_pkg/map_creation.py) it was tried to use simple Kalman filters to map the detections into map frame. This does however work not that good, since small heading changes are sometimes not detected by OptiTrack as well as the used localization node does introduce a lag. This causes that a very simple translation of cone positions into map frame is not possible and SLAM is also needed here (probably).\
+The data flow is as following:\
+((Camera image --> pylon detection node) + (OptiTrack pose --> robus_localization)) --> map creation node
+
+The further parts of the full problem are therefor only developed in a simulated environment, where a [map creation simulation node](./landmark_based_lane_detection_pkg/landmark_based_lane_detection_pkg/simulate_map_creation.py) simulates the mapping process by reading in a predefined map (cone positions and cone type (left/ right)). The map is then produced by adding seen cones into the output map which is then sent via a ros topic to another nodes.\
+The trajectory to drive is then created by the [trajectory creation node](./landmark_based_lane_detection_pkg/landmark_based_lane_detection_pkg/trajectory_creation.py). It's using the Dynamic Window Approach (DWA) to find drivable trajectories. The previous "find the centerpoint for every cone-pair" was removed, since sometimes only one cone of a pair is seen and therefore this algorithm can produce wrong output.\
+The trajectory will then be driven by the [driving simulation node](./landmark_based_lane_detection_pkg/landmark_based_lane_detection_pkg/simulate_driving.py), which simply follows the trajectory. The ouput of that is a pose where the ego vehicle is currently - this output is then again used in the map creation node, which checks, which cones are visibile and adds them to the output map, if they were not visible before.\
+The [route optimization node](./landmark_based_lane_detection_pkg/landmark_based_lane_detection_pkg/route_optimization.py) will detect a loop closure and then create a full optimized (here only smoothed) path and output it.\
+In a later stage, when every node is further developed and works fine, the optimized path can be used instead of the trajectory planning node for further laps after the first one.  
+The pipeline can be seen here:
+<div align="center">
+    <img src="readme_utils/simulated_pipeline_rqt.png">
+</div>
+The output of it can be seen here:
+<div align="center">
+    <img src="readme_utils/simulated_pipeline_output.png">
+</div>
+
+Note: The modelcity setput can be launched with [this](./landmark_based_lane_detection_pkg/launch/pylone_detection_launch.py) launch file.
+The simulation setup can be launched with [this](./landmark_based_lane_detection_pkg/launch/simulate_trajectory_finding_launch.py) launch file.
+
 
 # Behaviour/ Problems
 - The here stated problems are arising in the modelcity setup and will be probably replaced by other problems in a real-world application
