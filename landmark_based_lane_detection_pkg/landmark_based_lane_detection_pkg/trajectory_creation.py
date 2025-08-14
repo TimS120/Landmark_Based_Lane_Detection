@@ -122,7 +122,7 @@ class TrajectoryCreation(Node):
         self.create_subscription(MarkerArray, "/pylon_map", self.map_cb, 10)
 
         # Publisher
-        self.traj_pub = self.create_publisher(PoseArray, "/trajectory", 1)
+        self.traj_pub = self.create_publisher(PoseArray, "/trajectory", 10)
 
         # Other
         self.current_pose: Optional[PoseStamped] = None

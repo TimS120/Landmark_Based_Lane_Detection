@@ -1,13 +1,13 @@
 # 🚗 Landmark-Based Lane Detection Using Traffic Cones (YOLOv8 + RealSense)
+This project was initially designed for the model city, however it is continued with the aim of getting a pipeline for the autonomous driving disciplin of Formula Student. Information about model city colloquium are here directly below, information about continued implementation are starting from [here](#formula-student-problem-switch).
 
 This project implements a cone-based **landmark lane detection system** designed for autonomous navigation in a **model city lab environment**. It uses an **Intel RealSense RGB-D camera** and a **custom-trained YOLOv8 model** to detect cones, estimate depth, and form a drivable centerline path in real time.
 
 # 🧪 Research Question
-
 How effectively can a landmark-based lane detection system using a RealSense camera and YOLOv8 cone detection generate a reliable drivable path for small autonomous vehicles in a model city environment without relying on traditional lane markings?
 
 # 📖 Introduction
-Accurate and robust lane detection is a critical component of autonomous vehicle navigation, especially in environments where traditional road markings are unavailable, inconsistent, or purposely excluded. In small-scale research setups like model cities—lab environments built for developing and testing autonomous driving algorithms—traditional lane lines are often replaced with simpler landmarks such as colored traffic cones.
+Accurate and robust lane detection is a critical component of autonomous vehicle navigation, especially in environments where traditional road markings are unavailable, inconsistent, or purposely excluded. In small-scale research setups like model cities-lab environments built for developing and testing autonomous driving algorithms-traditional lane lines are often replaced with simpler landmarks such as colored traffic cones.
 
 This project presents a landmark-based lane detection system that leverages YOLOv8 object detection and Intel RealSense RGB-D sensing to identify traffic cones and generate a drivable path. The cones act as visual proxies for lane boundaries. By combining RGB detection and depth-based 3D localization, the system dynamically pairs cones based on spatial proximity and infers a centerline path in real time.
 
@@ -16,7 +16,7 @@ Unlike conventional vision-based approaches that rely on white lane markings or 
 The goal is to evaluate how reliably such a system can estimate a lane path using only visual and depth cues, without relying on external infrastructure like GPS or SLAM.
 
 <div align="center">
-    <img src="Test_results/image_intro.jpeg" height=500, width=800>
+    <img src="Test_results/image_intro.jpeg">
    <br>
 <em>Figure: Model city environment.</em>
 </div>
@@ -26,7 +26,6 @@ The goal is to evaluate how reliably such a system can estimate a lane path usin
 
 
 ## Literature Review Summary
-
 The literature strongly supports using traffic cones as robust lane landmarks in autonomous driving, especially where lane paint is unavailable. Studies validate cone detection with RGB-D sensors and advanced object detectors like YOLO, emphasizing benefits of sensor fusion for accurate 3D localization.
 
 Our approach builds on these findings by integrating an Intel RealSense camera with YOLOv8 for real-time, robust lane path estimation, suitable for small autonomous vehicles operating in experimental or indoor environments.
@@ -38,18 +37,17 @@ Our approach builds on these findings by integrating an Intel RealSense camera w
 
 
 # Pipeline Overview
-## 📷 1. Sensor Input – RealSense Camera
+## 📷 1. Sensor Input - RealSense Camera
 
 **Streams Captured:**
-- **RGB Frame:** 640×480 @ 30 FPS  
-- **Depth Frame:** 640×480 @ 30 FPS
+- **RGB Frame:** 640x480 @ 30 FPS  
+- **Depth Frame:** 640x480 @ 30 FPS
 
 **Tech Stack:**
 - Captured using `pyrealsense2`  
 - `depth_scale` used to convert depth values to meters
 
-## 🧠 2. Object Detection – YOLOv8
-
+## 🧠 2. Object Detection - YOLOv8
 **Model:**
 - YOLOv8 (Ultralytics), custom-trained on [Roboflow](https://universe.roboflow.com/transfer-learning-h9tt8/scientific-colloquim/dataset/4)  
 - **Classes:**
@@ -62,26 +60,24 @@ Our approach builds on these findings by integrating an Intel RealSense camera w
 - Confidence scores
 
 <div align="center">
-    <img src="Test_results/test_image_obj.png" height=500, width=800>
+    <img src="Test_results/test_image_obj.png">
    <br>
 <em>Figure: Object Detection.</em>
 </div>
 
 ## 📐 3. Depth Estimation (3D Localization)
-
 **Steps:**
 - Extract lower-central ROI from each bounding box  
 - Filter:
   - Invalid (`= 0`) depth values  
-  - Outliers using 10th–90th percentile  
+  - Outliers using 10th-90th percentile  
 - Compute **median depth**  
 - Convert to meters using RealSense `depth_scale`
 
 ## 🧭 4. Landmark Categorization
-
 - Cones classified as:
-  - `left_cones` ← Red cones
-  - `right_cones` ← Yellow cones
+  - `left_cones` - Red cones
+  - `right_cones` - Yellow cones
 
 Each cone includes:
 - 2D image position  
@@ -90,7 +86,6 @@ Each cone includes:
 - Bounding box and confidence
 
 ## 🧮 5. Cone Pairing and Path Formation
-
 **Pairing Rule:** Match each **left cone with its nearest right cone** using **3D Euclidean distance**
 
 For each valid pair:
@@ -101,23 +96,20 @@ For each valid pair:
 - Store for centerline sorting and smoothing
 
 ## 📏 6. Centerline Path Generation
-
 - Path points are **sorted by increasing average depth**  
 - Temporal smoothing applied using a sliding window of recent frames  
 - Smoothed midpoints are connected with a **polyline**, and the first point is labeled `"START"`
 
 ### 🔧 Parameters Used:
-
 | Parameter             | Value / Logic                            |
 |----------------------|------------------------------------------|
 | ROI Sampling Area     | Bottom 20% of bounding box               |
-| Depth Filtering       | 10th–90th percentile, median computed    |
+| Depth Filtering       | 10th-90th percentile, median computed    |
 | Pairing Rule          | Nearest in `y` direction (vertical axis) |
 | Sorting Criterion     | By average depth (ascending)             |
 | Visualization         | OpenCV (bounding boxes, lines, markers)  |
 
 ## 🖼️ 7. Output Visualization
-
 - **Left Panel:** Annotated RGB frame  
   - Cone bounding boxes, class labels, depth (in meters)  
   - Centerline polyline and `"START"` marker  
@@ -127,7 +119,6 @@ For each valid pair:
 ---
 
 # 📦 Dataset Details
-
 The dataset was **custom-collected in "Model City" environment** specifically designed for small autonomous vehicle experiments. It includes labeled images of **traffic cones** used as visual lane markers, captured from a RealSense RGB-D camera.
 
 ### 📁 Dataset Split:
@@ -156,9 +147,7 @@ roboflow:
 ```
 
 ## 📊 Model Performance Summary
-
 ### **Validation Set Results:**
-
 | Class          | Images | Instances | Precision | Recall | mAP@0.5 | mAP@0.5:0.95 |
 |----------------|--------|-----------|-----------|--------|---------|--------------|
 | All Classes    | 20     | 130       | **0.929** | **0.909** | **0.884** | **0.728** |
@@ -173,7 +162,7 @@ roboflow:
 # Confusion Matrix
 
 <div align="center">
-    <img src="Test_results/confusion_matrix.png" height=500, width=800>
+    <img src="Test_results/confusion_matrix.png">
    <br>
 <em>Figure: Confusion Matrix.</em>
 </div>
@@ -184,7 +173,6 @@ roboflow:
 To assess the performance of our cone-based landmark lane detection system, we use four key evaluation metrics:
 
 ### 🔹 Detection Accuracy (YOLOv8)
-
 We evaluate the cone detection capability of our YOLOv8 model using standard object detection metrics. These values reflect how accurately the model identifies and classifies red and yellow cones in the scene.
 
 - **Precision:** 92.9%  
@@ -195,14 +183,13 @@ We evaluate the cone detection capability of our YOLOv8 model using standard obj
 The model demonstrates strong overall detection performance, with high precision and recall across both classes. Confusion matrix results further confirm effective separation between red and yellow cones with minimal false positives.
 
 ### 🔹 Depth Accuracy (RMSE)
-
-To validate the system’s depth estimation, we compared the predicted depth values from the RealSense camera with ground-truth distances measured manually. Two sets of frames were evaluated with five measurement and Root Mean Square error was used.
+To validate the system's depth estimation, we compared the predicted depth values from the RealSense camera with ground-truth distances measured manually. Two sets of frames were evaluated with five measurement and Root Mean Square error was used.
 
 - **Frame 1:** RMSE = 0.035 m 
 - **Frame 2:** RMSE = 0.030 m 
   
 <div align="center">
-    <img src="Test_results/tets_image4.png" height=500, width=800>
+    <img src="Test_results/tets_image4.png">
     <br>
 <em>Figure: Frame 1.</em>
 </div>
@@ -212,7 +199,7 @@ To validate the system’s depth estimation, we compared the predicted depth val
 <br>
 
 <div align="center">
-    <img src="Test_results/test_image5.png" height=500, width=800>
+    <img src="Test_results/test_image5.png">
     <br>
 <em>Figure: Frame 2.</em>
 </div>
@@ -220,7 +207,6 @@ To validate the system’s depth estimation, we compared the predicted depth val
 The RMSE values indicate reliable depth prediction, with average errors under 4 cm. These results confirm that our lower-central ROI sampling method yields accurate depth even under varied ranges.
 
 ### 🔹 Lane Estimation Error (Midpoint Deviation)
-
 To assess how well the system can form the lane centerline, we measured three deviation between the predicted midpoints (between left and right cones) and manually marked ground-truth midpoints on the track.
 
 - **Mean Error:** 0.071 m  
@@ -231,7 +217,7 @@ This low deviation confirms that the system can accurately estimate the drivable
 *📋 For detailed tables and raw measurements, refer to the evaluation script outputs and screenshots.*
 
 <div align="center">
-    <img src="Test_results/test_image_result.png" height=500, width=800>
+    <img src="Test_results/test_image_result.png">
   <br>
 <em>Figure: Real-time lane detection terminal result.</em>
 </div>
@@ -239,7 +225,6 @@ This low deviation confirms that the system can accurately estimate the drivable
 ---
 
 ## ✅ Conclusion
-
 We developed a real-time lane detection system using **traffic cones**, an **Intel RealSense RGB-D camera**, and a **YOLOv8 object detector** for use in model city lab environments. By pairing detected cones using depth data, the system generates an accurate drivable centerline without relying on traditional lane markings.
 
 Through careful cone pairing and depth-based spatial reasoning, the system achieves:
@@ -252,7 +237,6 @@ These results validate the feasibility and robustness of using **simple, color-c
 
 Ultimately, this approach offers a **cost-effective, vision-based alternative** to conventional lane detection, ideal for small-scale autonomous systems in structured or semi-structured environments.
 
-
 ---
 
 ## 📌 Notes
@@ -262,27 +246,36 @@ Ultimately, this approach offers a **cost-effective, vision-based alternative** 
 
 
 ---
+# Formula student problem switch
+- The aim is to get something like [this](https://www.youtube.com/watch?v=ZPVMYiw5ucc) or [this](https://www.youtube.com/watch?v=FbKLE7uar9Y).
+  - [Rules](https://www.formulastudent.de/fsg/rules)
+  - Maybe the most interesting points:
+    - Usage of GPS is allowed, however maybe not reliable
+    - Cones representing the track outlines
+- Literature of approaches to do that can be found [here](https://arxiv.org/pdf/2210.10933), [here](https://arxiv.org/pdf/1909.00119) and [here](https://arxiv.org/pdf/2408.06113).
+- A thorough report about the trajectory/ path planning can be found [here](https://static1.squarespace.com/static/5e2a78aea2dc434ac475b5a4/t/615ee7754fb3ae56ba011134/1731809144631/Adam+Slomoi+-+Path+Planning+and+Control+in+an+Autonomous+Formula+Student+Vehicle.pdf).
+
+
 # Behaviour/ Problems
-- Image+Depth image causes high data traffic (or computational need) --> Low fps of only up to 7 fps [in yellow car], with full resolution (needed for bigger field of view) the fps will further decrease
+- The here stated problems are arising in the modelcity setup and will be probably replaced by other problems in a real-world application
+- RGB+Depth image causes high data traffic (or computational need) --> Low fps of only up to 7 fps [in yellow car at least (measured IN the yellow car)]. With full resolution (needed for wider field of view) the fps will further decrease
 
-- The accuracy of the object detection is not that high and causes that cones are sometimes not be detected
+- The accuracy of the object detection is not that high in the situation where the car stands on its tires (training data mostely recorded while holding the car in the air)
 
-- The heading of the ego vehicle is slow and is lacking behind (it updates only when the car changes also its position strong enough) --> Using the commented out version with lower covariances solves this at least a little bit
+- The heading of the ego vehicle is slow and is lacking behind (it updates only when the car changes also its position strong enough), so a simulation of localization (SLAM part) with custom mapping with OptiTrack information cannot be made --> Problem comes from OptiTrack + localization node [Used the [robus](https://git.hs-coburg.de/ROBUS/robus_localization) version] partly. Using the [commented out version](https://git.hs-coburg.de/ROBUS/robus_localization/src/commit/60e374683cf754f8d5f47832bc68bb4cc463731c/robus_localization_pkg/robus_localization.py#L32) with lower covariances solves this at least a partly.
 
 
 # Next steps
-- Find way to have higher frame rates while having the full field of view
+- Solving the modelcity related problems:
+  - Find way to have higher frame rates while having the full field of view
 
-- Train model with data which was recorded with the camera of the car in situation where the car stands on the ground/ drives around by its own AND WITH MORE DATA OVERALL
+  - Train model with data which was recorded with the camera of the car in situation where the car stands *on* the ground/ drives around by its own. Use more data to increase the performance of the model
 
-- Make the ego heading more responsive/ precise
-- Tune the map creation script in a way, so that it works with this behaviour of the localization output
-  - Or use SLAM, because currently we assume that we know the position of the ego vehicle with OptiTrack + localization node and only want to do mapping. However apparently the position (more precise the heading) is not correct/ precise enough, so we have to localize the ego pose and do mapping of the pylones
-  - If you try to use the approach of using the pose which comes from the robus-localization node, then the map-creation script must also be changed in a way, so that it does not forget the already detected pylones which are no longer detecable (because they are e.g. behind the car) --> But I guess this approach of using OptiTrack for position and heading is anyway not that good, because e.g. GPS does also not provide any heading but only a position and the gps-signals can be occluded, so another method must be used in real world applications like Formula Student
+  - Make the ego heading more responsive/ precise
+  - Tune the map creation script in a way, so that it works with this behaviour of the localization output
+    - Or use SLAM, because currently we assume that we know the position of the ego vehicle with OptiTrack + localization node and only want to do mapping. However apparently the position (more precise the heading) is not correct/ precise enough, so we have to localize the ego pose and do mapping of the pylones
+    - If you try to use the approach of using the pose which comes from the robus-localization node, then the map-creation script must also be changed in a way, so that it does not forget the already detected pylones which are no longer detecable (because they are e.g. behind the car) --> But I guess this approach of using OptiTrack for position and heading is anyway not that good, because e.g. GPS does also not provide any heading but only a position and the gps-signals can be occluded, so another method must be used in real world applications like Formula Student
 
-
-- Implement a reliable method with which a trajectory can be found
-
-- Update readme from colloquium aim to usage-aim
-  - Write down, which repos with which commits were used + changes on them (robus_localization (covariance))
-  - Add that the aim is something like: https://www.youtube.com/watch?v=ZPVMYiw5ucc&t=2s
+- Switching to solving the Formula Student problem:
+  - Bring the simulated pipeline into real world application
+    - Using for that changed problem state suitable new algorithms and interfaces

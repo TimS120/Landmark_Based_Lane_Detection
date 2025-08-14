@@ -75,7 +75,6 @@ def close_loop(poly: np.ndarray) -> np.ndarray:
         return np.vstack([poly, poly[0]])
     return poly
 
-
 def chaikin_circular(poly: np.ndarray, iterations: int = 1, alpha: float = 0.25) -> np.ndarray:
     """
     Circular Chaikin smoothing on a closed ring (no fixed endpoints).
