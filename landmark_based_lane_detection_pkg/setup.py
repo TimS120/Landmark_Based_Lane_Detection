@@ -28,6 +28,7 @@ setup(
             'simulate_map_creation_node = landmark_based_lane_detection_pkg.simulate_map_creation:main',
             'simulate_driving_node = landmark_based_lane_detection_pkg.simulate_driving:main',
             'trajectory_creation_node = landmark_based_lane_detection_pkg.trajectory_creation:main',
+            'route_optimization_node = landmark_based_lane_detection_pkg.route_optimization:main',
         ],
     },
     include_package_data=True,

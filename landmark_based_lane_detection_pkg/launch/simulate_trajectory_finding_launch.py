@@ -14,7 +14,7 @@ def generate_launch_description() -> LaunchDescription:
             executable="simulate_map_creation_node",
             name="simulate_map_creation_node",
             output="screen",
-            parameters=[{"map_name": "map_spacing_033.json"}],
+            parameters=[{"map_name": "map2.json", "fov_deg": 45.0, "range_m": 5.0}],
         )
 
     simulate_driving = Node(
@@ -24,11 +24,19 @@ def generate_launch_description() -> LaunchDescription:
             output="screen",
             parameters=[],
         )
-    
+
     trajectory_creation = Node(
             package="landmark_based_lane_detection_pkg",
             executable="trajectory_creation_node",
             name="trajectory_creation_node",
+            output="screen",
+            parameters=[],
+        )
+
+    route_optimization = Node(
+            package="landmark_based_lane_detection_pkg",
+            executable="route_optimization_node",
+            name="route_optimization_node",
             output="screen",
             parameters=[],
         )
@@ -38,5 +46,6 @@ def generate_launch_description() -> LaunchDescription:
     launch_description.add_action(simulate_map_creation)
     launch_description.add_action(simulate_driving)
     launch_description.add_action(trajectory_creation)
+    launch_description.add_action(route_optimization)
 
     return launch_description
